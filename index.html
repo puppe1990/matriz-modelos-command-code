@@ -94,6 +94,12 @@
   .htmx-indicator { opacity: 0; transition: opacity .2s; }
   .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity: 1; }
 
+  /* O selo "Powered by Netlify" é injetado pelo edge no plano free e a API não
+     deixa desativá-lo (built_with_badge_enabled volta sempre true). Ele entra
+     como um iframe fixo no fim do body; fica escondido daqui.                  */
+  #nl-badge-frame,
+  iframe[title="Powered by Netlify"] { display: none !important; visibility: hidden !important; }
+
   /* ícone do botão: mostra o tema de destino */
   html[data-theme="dark"] .icon-moon,
   html[data-theme="light"] .icon-sun { display: none; }
