@@ -2,6 +2,8 @@
 
 Análise comparativa dos modelos e planos do [Command Code](https://commandcode.ai) em uma página única: preço por 1M tokens, custo real por requisição agêntica, teto de crédito por modelo, janelas de uso e índices de custo-benefício.
 
+**No ar:** https://matriz-modelos-command-code.netlify.app
+
 `index.html` é autocontido — a única dependência externa é o CDN do Tailwind.
 
 ## O que a página responde
