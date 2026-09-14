@@ -54,6 +54,15 @@ function initLangToggle() {
   };
 }
 
+/* ---------- selo do Netlify ----------
+   O edge injeta um iframe fixo ("Powered by Netlify") no fim do body, e no plano
+   atual a API mantém built_with_badge_enabled=true. O CSS já esconde; aqui o
+   elemento sai do DOM de fato (inclusive para leitores de tela).               */
+function pruneNetlifyBadge() {
+  document.querySelectorAll('#nl-badge-frame, iframe[title="Powered by Netlify"]')
+    .forEach(el => el.remove());
+}
+
 function boot() {
   initTheme();
   initLang();
@@ -61,6 +70,10 @@ function boot() {
   refresh();       // traduz o HTML estático e renderiza tudo
   initLangToggle();
   window.closeDetail = closeDetail;  // usado pelo botão "Fechar" dos partials
+
+  pruneNetlifyBadge();
+  // o script do selo é async: ele pode criar o iframe depois do boot
+  new MutationObserver(pruneNetlifyBadge).observe(document.body, { childList: true });
 }
 
 boot();
