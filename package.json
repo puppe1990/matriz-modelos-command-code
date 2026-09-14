@@ -1,0 +1,12 @@
+{
+  "name": "matriz-modelos-command-code",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Matriz de modelos e planos do Command Code: custo por requisição, teto de crédito, janelas de uso e benchmark",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "node build.mjs",
+    "dev": "npm run build && python3 -m http.server 8000"
+  }
+}

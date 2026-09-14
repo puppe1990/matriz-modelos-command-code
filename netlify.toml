@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "."
+
+[[headers]]
+  for = "/partials/*"
+  [headers.values]
+    cache-control = "public, max-age=3600"
