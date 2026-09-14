@@ -326,7 +326,7 @@ export function render() {
       ? `<span title="${tr("table.freeQuotaTitle")}" class="text-emerald-400">${tr("table.freeQuota")}</span>`
       : (r == null ? `<span class="text-slate-600">${tr("ui.na")}</span>`
         : `<span class="${r.est ? "text-slate-500" : "text-slate-300"}">${r.est ? tr("ui.approx") : ""}${int(r.n)}</span>` +
-          (isGoatPlan ? `<div class="text-[9px] text-slate-500 whitespace-nowrap">${tr("table.reqWindows", { h5: int(r.n * WINDOW.h5), week: int(r.n * WINDOW.week) })}</div>` : ""));
+          (isGoatPlan ? `<div class="text-[9px] text-slate-500 whitespace-nowrap" title="${tr("table.reqWindowsTitle")}">${tr("table.reqWindows", { h5: int(r.n * WINDOW.h5), week: int(r.n * WINDOW.week) })}</div>` : ""));
     return `
     <tr class="row-hover ${unavailable ? "opacity-40" : ""}">
       <td class="px-3 py-2.5 text-slate-500 mono text-xs whitespace-nowrap">${m.rankLabel || tr("ui.na")}</td>
