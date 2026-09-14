@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matriz de Modelos & Planos — Command Code</title>
+<script>try{if(localStorage.getItem("cc-matriz-tema")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  /* Cabeçalho fixo da matriz: o fundo precisa estar na própria célula, não só no
+     thead — sticky tira a célula do fluxo e o fundo do thead rola junto, deixando
+     o texto das linhas aparecer por baixo dos rótulos.                          */
+  :root { --thead-bg: #0f172a; --thead-borda: #1e293b; }
+  html[data-theme="light"] { --thead-bg: #f1f5f9; --thead-borda: #cbd5e1; }
+  .tabela-fixa thead th { position: sticky; top: 0; z-index: 10; background-color: var(--thead-bg); box-shadow: 0 1px 0 var(--thead-borda); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0b1120; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  .row-hover:hover { background: rgba(56,189,248,.07); }
+  .grad { background: linear-gradient(135deg,#0ea5e9 0%,#8b5cf6 50%,#ec4899 100%); }
+  .grad-text { background: linear-gradient(90deg,#38bdf8,#a78bfa,#f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  :focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+  @media (max-width: 640px) { input.fctl, select.fctl { font-size: 16px; } }
+
+  /* ---------- TEMA CLARO ----------
+     O layout é escrito em utilitários do Tailwind com a paleta escura. Em vez de
+     duplicar classes em ~70 modelos, o tema claro redefine os mesmos utilitários
+     sob html[data-theme="light"] — especificidade maior, sem tocar no markup.
+     Textos de apoio sobem para tons com contraste ≥ 4,5:1 sobre branco.        */
+  html { color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
+
+  html[data-theme="light"] .bg-slate-950 { background-color: #f8fafc; }
+  html[data-theme="light"] .bg-slate-950\/90 { background-color: rgba(248,250,252,.92); }
+  html[data-theme="light"] .bg-slate-950\/70 { background-color: #f1f5f9; }
+  html[data-theme="light"] .bg-slate-900 { background-color: #f1f5f9; }
+  html[data-theme="light"] .bg-slate-900\/40,
+  html[data-theme="light"] .bg-slate-900\/50,
+  html[data-theme="light"] .bg-slate-900\/60,
+  html[data-theme="light"] .bg-slate-900\/70 { background-color: #ffffff; }
+  html[data-theme="light"] .bg-slate-800,
+  html[data-theme="light"] .bg-slate-800\/70,
+  html[data-theme="light"] .bg-slate-800\/80,
+  html[data-theme="light"] .bg-slate-700\/40 { background-color: #e2e8f0; }
+  html[data-theme="light"] .bg-emerald-950\/20 { background-color: #ecfdf5; }
+  html[data-theme="light"] ::-webkit-scrollbar-track { background: #f1f5f9; }
+  html[data-theme="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+  html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  html[data-theme="light"] .row-hover:hover { background: rgba(2,132,199,.07); }
+
+  html[data-theme="light"] .border-slate-800 { border-color: #e2e8f0; }
+  html[data-theme="light"] .border-slate-700 { border-color: #cbd5e1; }
+  html[data-theme="light"] .border-emerald-900\/60 { border-color: #a7f3d0; }
+  html[data-theme="light"] .border-amber-400\/60 { border-color: #f59e0b; }
+  html[data-theme="light"] .border-slate-400\/50 { border-color: #cbd5e1; }
+  html[data-theme="light"] .border-amber-700\/50 { border-color: #d97706; }
+  html[data-theme="light"] .divide-slate-800\/70 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0; }
+
+  html[data-theme="light"] .text-white { color: #0f172a; }
+  html[data-theme="light"] .text-slate-100 { color: #0f172a; }
+  html[data-theme="light"] .text-slate-200 { color: #1e293b; }
+  html[data-theme="light"] .text-slate-300 { color: #334155; }
+  html[data-theme="light"] .text-slate-400 { color: #475569; }
+  html[data-theme="light"] .text-slate-500 { color: #475569; }
+  html[data-theme="light"] .text-slate-600 { color: #64748b; }
+  html[data-theme="light"] .placeholder-slate-600::placeholder { color: #94a3b8; }
+
+  html[data-theme="light"] .text-sky-300 { color: #075985; }
+  html[data-theme="light"] .text-sky-400 { color: #0369a1; }
+  html[data-theme="light"] .text-sky-500 { color: #0369a1; }
+  html[data-theme="light"] .text-emerald-300,
+  html[data-theme="light"] .text-emerald-300\/90 { color: #065f46; }
+  html[data-theme="light"] .text-emerald-400 { color: #047857; }
+  html[data-theme="light"] .text-violet-300 { color: #6d28d9; }
+  html[data-theme="light"] .text-violet-400 { color: #7c3aed; }
+  html[data-theme="light"] .text-amber-300,
+  html[data-theme="light"] .text-amber-400,
+  html[data-theme="light"] .text-amber-500\/80 { color: #b45309; }
+  html[data-theme="light"] .text-rose-400 { color: #be123c; }
+  html[data-theme="light"] .text-teal-400 { color: #0f766e; }
+  html[data-theme="light"] .text-cyan-400 { color: #0e7490; }
+  html[data-theme="light"] .text-lime-400 { color: #4d7c0f; }
+  html[data-theme="light"] .grad-text { background: linear-gradient(90deg,#0284c7,#7c3aed,#db2777); -webkit-background-clip: text; background-clip: text; }
+
+  /* ícone do botão: mostra o tema de destino */
+  html[data-theme="dark"] .icon-moon,
+  html[data-theme="light"] .icon-sun { display: none; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+
+<!-- ============ HEADER ============ -->
+<header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-30">
+  <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl grad flex items-center justify-center font-black text-white text-lg">CC</div>
+      <div>
+        <h1 class="text-lg sm:text-xl font-bold text-white leading-tight">Matriz de Modelos &amp; Planos</h1>
+        <p class="text-xs text-slate-400">Command Code · valores, custo por token, custo por requisição, limites e benchmark</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-right text-[11px] text-slate-500 leading-relaxed">
+        <div>Fonte: <span class="text-slate-300">commandcode.ai/docs</span> — Pricing &amp; Limits + plano GOAT</div>
+        <div>Referência: <span class="text-slate-300">14/set/2026</span> · preços em USD / 1M tokens</div>
+      </div>
+      <button id="btnTheme" type="button" aria-pressed="false" aria-label="Ativar tema claro"
+              class="shrink-0 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-sky-500 hover:text-sky-300 transition">
+        <svg class="icon-sun w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+        <svg class="icon-moon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+        </svg>
+        <span id="themeLabel">Claro</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-8 space-y-10">
+
+  <!-- ============ PLANOS ============ -->
+  <section>
+    <div class="flex items-end justify-between mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="text-xl font-bold text-white">1. Planos do Command Code</h2>
+        <p class="text-sm text-slate-400">Quanto você paga vs. quanto recebe em créditos — e o multiplicador efetivo.</p>
+      </div>
+      <span class="hidden sm:block text-xs text-slate-500">créditos de modelo são cobrados a preço de API, sem markup</span>
+    </div>
+    <div id="planGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
+    <p class="text-xs text-slate-500 mt-3">
+      Janelas rolantes de uso limitam apenas os <strong class="text-slate-400">créditos inclusos</strong>; créditos extras (top-up) não são limitados, acumulam e nunca expiram.
+      O plano <strong class="text-slate-400">Go ($1)</strong> serve todos os modelos open-source e alguns premium (GPT-5.6 Luna, Grok 4.5, Muse Spark Contributor, Qwen Max &amp; Plus).
+    </p>
+  </section>
+
+  <!-- ============ KPIs ============ -->
+  <section>
+    <h2 class="text-xl font-bold text-white mb-1">2. Destaques da matriz</h2>
+    <p class="text-sm text-slate-400 mb-4">Os extremos de cada eixo — útil para saber onde estão as apostas antes de olhar a tabela.</p>
+    <div id="kpiGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"></div>
+  </section>
+
+  <!-- ============ COMO O GOAT COBRA ============ -->
+  <section>
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">3. Como o GOAT cobra: teto por modelo e janelas</h2>
+      <p class="text-sm text-slate-400 max-w-4xl">
+        O erro mais comum ao ler o plano é tratar os $70 como um bolo único. Não é: o GOAT dá um
+        <strong class="text-slate-300">teto mensal por modelo</strong>, e esse teto varia de $20 a $70. A escolha do modelo muda o quanto você consegue codar no mês.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+        <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Você paga → recebe</div>
+        <div class="flex items-end gap-2 mt-2">
+          <span class="text-3xl font-black text-white">$10</span>
+          <span class="text-slate-500 mb-1">→</span>
+          <span class="text-3xl font-black text-emerald-400">$70</span>
+          <span class="text-xs text-emerald-400 mb-1.5 font-bold">7×</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+          Só que os $70 são <em>somas de tetos por modelo</em>, não um saldo livre. Gastar tudo no GPT-5.6 Sol não deixa o mesmo $70 disponível no Gemini 3.8 Flash.
+        </p>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+        <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">3 janelas de uso</div>
+        <div class="space-y-2 mt-3 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-slate-400 shrink-0">5 horas</span>
+            <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-400" style="width:20%"></div></div>
+            <span class="w-10 text-right text-slate-300 font-semibold">20%</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-slate-400 shrink-0">semana</span>
+            <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full bg-sky-400" style="width:50%"></div></div>
+            <span class="w-10 text-right text-slate-300 font-semibold">50%</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-slate-400 shrink-0">mês</span>
+            <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full bg-violet-400" style="width:100%"></div></div>
+            <span class="w-10 text-right text-slate-300 font-semibold">100%</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+          <strong class="text-slate-300">$14 em qualquer 5 h</strong> · <strong class="text-slate-300">$35 em 7 dias</strong> · <strong class="text-slate-300">teto do modelo no mês</strong>.
+          A janela de 5 h é a que trava primeiro num dia pesado de agente.
+        </p>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+        <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Modelos novos vs. negociados</div>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+          Onde a Command Code negociou capacidade, o teto sobe (até os $70 cheios). Onde não negociou, o modelo novo entra no padrão de
+          <strong class="text-slate-300">2× o valor pago</strong>: $20 de teto no plano de $10.
+        </p>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+          Variantes de velocidade (<em>GLM-5.2 Fast</em>, <em>Kimi K2.7 Code HighSpeed</em>) <strong class="text-slate-300">não herdam</strong> o teto do modelo base — ficam nos $20.
+        </p>
+        <p class="text-xs text-slate-500 mt-2">Teto = pontos; a autonomia real é <span class="mono text-slate-400">teto ÷ custo por requisição</span>.</p>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-800 overflow-hidden">
+      <div class="px-4 py-3 bg-slate-900/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm font-bold text-white">Distribuição dos tetos no GOAT</span>
+        <span id="tierSummary" class="text-xs text-slate-400"></span>
+      </div>
+      <div id="tierList" class="divide-y divide-slate-800/70"></div>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-2">
+      Teto publicado por modelo na página do plano GOAT. Os três modelos grátis (Laguna S 2.1, LongCat 2.0 e Ling 3.0 Flash Sante) ficam fora de qualquer teto.
+    </p>
+  </section>
+
+  <!-- ============ RECOMENDAÇÕES ============ -->
+  <section>
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">4. Recomendações por objetivo</h2>
+      <p class="text-sm text-slate-400 max-w-4xl">
+        A resposta muda com a pergunta. Cada cartão é o vencedor de um critério diferente, calculado em cima dos mesmos dados da matriz —
+        não é opinião, é o topo de cada eixo.
+      </p>
+    </div>
+    <div id="pickGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"></div>
+  </section>
+
+  <!-- ============ RANKING ============ -->
+  <section>
+    <div class="flex items-end justify-between mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="text-xl font-bold text-white">5. Ranking — melhor custo-benefício</h2>
+        <p class="text-sm text-slate-400">
+          Índice = <span class="mono text-sky-300">Intelligence</span> ÷ <span class="mono text-sky-300">custo por 1M tokens</span>
+          (perfil de requisição agêntica: 800 input novo + 50.000 cache read + 160 output).
+          A opção <strong class="text-emerald-400">⭐ Inteligente e barato</strong> usa a métrica de equilíbrio, que exige as duas pontas.
+        </p>
+      </div>
+      <div class="text-xs text-slate-500 max-w-md text-right">modelos grátis ficam fora das duas métricas (custo zero = benefício infinito)<br>equilíbrio = média geométrica de IQ e barateza, normalizados em 0–100</div>
+    </div>
+    <div id="podium" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"></div>
+    <div id="rankingList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+  </section>
+
+  <!-- ============ CONTROLES ============ -->
+  <section>
+    <h2 class="text-xl font-bold text-white mb-4">6. Matriz completa</h2>
+
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Buscar</span>
+        <input id="fSearch" type="text" placeholder="nome, vendor ou id…"
+               class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-sky-500">
+      </label>
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Categoria</span>
+        <select id="fCat" class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500">
+          <option value="all" selected>Todos os 70 modelos</option>
+          <option value="goat">Inclusos no GOAT</option>
+          <option value="proplus">Só em Pro / Max (premium)</option>
+          <option value="deals">Com deal ativo</option>
+          <option value="free">Grátis (custo zero)</option>
+          <option value="open">Open-source</option>
+          <option value="vision">Com visão</option>
+          <option value="reasoning">Com reasoning configurável</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Vendor</span>
+        <select id="fVendor" class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500"></select>
+      </label>
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Plano (disponibilidade + req)</span>
+        <select id="fPlan" class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500">
+          <option value="go">Go — $1/mês</option>
+          <option value="goat" selected>GOAT — $10/mês</option>
+          <option value="pro">Pro — $20/mês</option>
+          <option value="max10">Max 10× — $100/mês</option>
+          <option value="max20">Max 20× — $200/mês</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Inteligência mínima</span>
+        <select id="fMinIq" class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500">
+          <option value="0">Qualquer (inclui sem nota)</option>
+          <option value="30">≥ 30 — competente</option>
+          <option value="40" selected>≥ 40 — forte</option>
+          <option value="45">≥ 45 — topo</option>
+          <option value="50">≥ 50 — elite</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Ordenar por</span>
+        <select id="fSort" class="fctl mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500">
+          <option value="balance" selected>⭐ Inteligente e barato (equilíbrio)</option>
+          <option value="value">IQ por dólar (ratio puro)</option>
+          <option value="iq">Intelligence (maior)</option>
+          <option value="tps">Velocidade tok/s (maior)</option>
+          <option value="cred">Teto de crédito no GOAT (maior)</option>
+          <option value="req">Requisições/mês no plano (maior)</option>
+          <option value="reqh">Requisições na janela de 5 h (maior)</option>
+          <option value="cpr">Custo por requisição (menor)</option>
+          <option value="blend">Custo por 1M tokens (menor)</option>
+          <option value="out">Preço output (menor)</option>
+          <option value="cache">Preço cache read (menor)</option>
+          <option value="name">Nome (A→Z)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div id="resultCount" role="status" aria-live="polite" class="text-xs text-slate-400"></div>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-xs text-slate-400">
+          <input id="fOnlyPlan" type="checkbox" checked class="accent-sky-500 w-3.5 h-3.5">
+          mostrar apenas modelos inclusos no plano selecionado
+        </label>
+        <button id="btnCsv" class="text-xs rounded-lg border border-slate-700 hover:border-sky-500 hover:text-sky-300 px-3 py-1.5 text-slate-300 transition">Exportar CSV</button>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-800 overflow-hidden">
+      <div class="overflow-auto max-h-[70vh]">
+        <table id="tabelaMatriz" class="tabela-fixa w-full text-sm border-collapse">
+          <thead class="bg-slate-900 text-slate-400 text-[11px] uppercase tracking-wide">
+            <tr>
+              <th scope="col" class="px-3 py-3 text-left font-semibold whitespace-nowrap">#</th>
+              <th scope="col" class="px-3 py-3 text-left font-semibold">Modelo</th>
+              <th scope="col" class="px-3 py-3 text-left font-semibold">Vendor</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Janela de contexto">Ctx</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Teto mensal de crédito deste modelo no plano GOAT">Teto $</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="USD por 1M tokens de input">In $</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="USD por 1M tokens de output">Out $</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="USD por 1M tokens de cache read">Cache $</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Custo em USD de UMA requisição típica de agente (800 in + 50k cache read + 160 out)">$/req</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Custo efetivo por 1M tokens no padrão de requisição agêntica">$ / 1M<br><span class="normal-case font-normal text-slate-500">blend</span></th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Índice de Intelligence composto publicado pelo Command Code">Intell.</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Pontos de Intelligence por US$ 1 a cada 1M tokens">IQ/US$</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap" title="Inteligente E barato: média geométrica de inteligência e barateza, normalizadas. Penaliza modelo barato porém fraco.">Equilíb.</th>
+              <th scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap">tok/s</th>
+              <th scope="col" class="px-3 py-3 text-center font-semibold whitespace-nowrap">Plano mín.</th>
+              <th id="thReq" scope="col" class="px-3 py-3 text-right font-semibold whitespace-nowrap">Req/mês</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y divide-slate-800/70"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-2">
+      † requisições grátis: <strong class="text-slate-400">LongCat 2.0</strong> e <strong class="text-slate-400">Ling 3.0 Flash Sante</strong> limitadas a 100 requisições/dia por conta;
+      <strong class="text-slate-400">Laguna S 2.1</strong> livre enquanto houver capacidade. Modelos em <span class="text-rose-400">vermelho</span> não estão inclusos no plano selecionado.
+      <span class="mono">≈</span> marca valor estimado (não publicado): no req/mês, teto ÷ custo por requisição. Valores <s>riscados</s> são o preço cheio antes do deal.
+    </p>
+    <p class="text-[11px] text-slate-500 mt-1">
+      ‡ Intelligence estimada. A tabela do plano não pontua alguns modelos, mas a página individual de cada um publica o índice do
+      <strong class="text-slate-400">Artificial Analysis v4.3</strong> — uma versão mais nova da mesma escala. Nos 53 modelos que aparecem nas duas, a página fica
+      <strong class="text-slate-400">5,6 pontos abaixo em média</strong> (de 2,0 a 8,1, desvio de 1,4); é essa diferença que aplico aqui, e o valor original aparece embaixo (AA).
+      O erro do método fica em torno de ±1,4 ponto. A estimativa entra na ordenação por Intelligence e no piso de IQ, mas fica
+      <strong class="text-slate-400">fora do custo-benefício e do equilíbrio</strong>, que exigem nota oficial.
+      Dez modelos seguem sem nota em nenhuma das duas fontes.
+    </p>
+  </section>
+
+  <!-- ============ GRÁTIS ============ -->
+  <section>
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">7. O que valem os grátis</h2>
+      <p class="text-sm text-slate-400 max-w-4xl">
+        Os três modelos de custo zero não são versões reduzidas de nada: são o piso do catálogo e ficam fora de qualquer teto de crédito.
+        Abaixo, cada um comparado com os vizinhos mais próximos em benchmark — os mesmos que as páginas oficiais listam como rivais diretos.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div class="xl:col-span-2 rounded-2xl border border-slate-800 overflow-hidden">
+        <div class="px-4 py-3 bg-slate-900/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-sm font-bold text-white">LongCat 2.0 · vizinhos por benchmark</span>
+          <span class="text-xs text-slate-400">único grátis com nota publicada</span>
+        </div>
+        <div class="overflow-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-slate-900/60 text-slate-400 text-[11px] uppercase tracking-wide">
+              <tr>
+                <th scope="col" class="px-3 py-2.5 text-left font-semibold">Modelo</th>
+                <th scope="col" class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" title="Intelligence do Artificial Analysis v4.3 — mesma escala em todas as linhas desta tabela">IQ (AA)</th>
+                <th scope="col" class="px-3 py-2.5 text-right font-semibold" title="Coding Index do Artificial Analysis">Coding</th>
+                <th scope="col" class="px-3 py-2.5 text-right font-semibold whitespace-nowrap">$/req</th>
+                <th scope="col" class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" title="Custo de 3.000 requisições — o teto mensal do grátis (100/dia)">3.000 req</th>
+              </tr>
+            </thead>
+            <tbody id="freeRivals" class="divide-y divide-slate-800/70"></tbody>
+          </table>
+        </div>
+        <p id="freeRivalsNote" class="text-[11px] text-slate-500 px-4 py-3 border-t border-slate-800 leading-relaxed"></p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="rounded-2xl border border-emerald-900/60 bg-emerald-950/20 p-4">
+          <div class="text-[11px] uppercase tracking-wide text-emerald-400 font-semibold">Quanto vale o grátis</div>
+          <div id="freeValue" class="text-xs text-slate-400 mt-2 leading-relaxed space-y-2"></div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+          <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Os dois sem nota</div>
+          <div id="freeNoScore" class="text-xs text-slate-400 mt-2 leading-relaxed space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ METODOLOGIA ============ -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+      <h3 class="font-bold text-white mb-3">Metodologia</h3>
+      <ul class="text-sm text-slate-400 space-y-2 list-disc pl-5">
+        <li><strong class="text-slate-200">Custo por 1M (blend agêntico)</strong> — perfil típico documentado pelo Command Code: ~800 tokens de input novo, ~50.000 tokens de cache read e ~160 tokens de output por requisição. Como o harness roda com ~98% de cache hit, o custo real é dominado pelo preço de <em>cache read</em>, e não pelo input.</li>
+        <li><strong class="text-slate-200">$/req</strong> — o mesmo perfil, em dólares: <span class="mono">(800·in + 50.000·cache + 160·out) ÷ 1.000.000</span>. É a unidade que importa: teto e janelas não estão em tokens, estão em dólares.</li>
+        <li><strong class="text-slate-200">Teto $</strong> — crédito mensal daquele modelo específico no GOAT, publicado na página do plano. Vai de $20 (novos, variantes de velocidade e a maioria dos modelos) a $70 (GPT-5.6 Sol, GLM-5.2, Tencent Hy3, Qwen 3.8 27B).</li>
+        <li><strong class="text-slate-200">Janelas 5 h / semana</strong> — 20% e 50% do teto mensal do modelo (a doc publica os três números e a proporção se confirma em todos: $14 = 20% de $70, $35 = 50%). Por isso um modelo de teto $20 tem 5 h de <em>$4</em>, e não de $14.</li>
+        <li><strong class="text-slate-200">Custo-benefício</strong> — índice = Intelligence ÷ custo/1M (blend). Mede "quanto de capacidade você compra por dólar" no uso real de agente.</li>
+        <li><strong class="text-slate-200">Equilíbrio (⭐ inteligente e barato)</strong> — exige <em>inteligência alta E preço baixo</em> ao mesmo tempo. Normaliza o IQ (escala linear, 17,4→53) e a barateza (escala log, de $0,0042 a $0,66 por 1M) e combina por <strong class="text-slate-200">média geométrica</strong>, gerando 0–100. Pelo ratio puro, o MiMo V2.5 (IQ 28,2) fica em 5º só por ser barato; pelo equilíbrio cai para 10º, e o GLM-5.3 Flash (IQ 46,2) sobe de 8º para 5º. Zera quando falta nota de IQ ou preço.</li>
+        <li><strong class="text-slate-200">Piso de inteligência</strong> — filtro que exige IQ ≥ X, para o ranking não ser dominado por modelos baratos porém fracos. Combine com "ordenar por requisições/mês" para achar <em>volume com capacidade</em>.</li>
+        <li><strong class="text-slate-200">Intelligence</strong> — índice composto publicado nas tabelas de modelos do Command Code. "not yet scored" = a tabela do plano não pontua o modelo (não entra nos rankings de custo-benefício nem de equilíbrio). Quando a página individual do modelo publica nota (Artificial Analysis v4.3), ela aparece como estimativa marcada com <strong class="text-slate-200">‡</strong>, convertida para a escala da tabela pela diferença média de 5,6 pontos medida nos 53 modelos presentes nas duas (erro do método ≈ ±1,4).</li>
+        <li><strong class="text-slate-200">DeepSeek</strong> — preço exibido é o <em>off-peak</em> (17 h/dia). Pico = 01:00–04:00 e 06:00–10:00 UTC, seg–sex, cerca de 2× o valor mostrado. Finais de semana são 100% off-peak.</li>
+        <li><strong class="text-slate-200">Estimativas (≈)</strong> — modelos antigos e fora das tabelas de req não têm número oficial; neles o req/mês é calculado como teto ÷ $/req. Os demais req/mês vêm direto da doc oficial.</li>
+      </ul>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+      <h3 class="font-bold text-white mb-3">Leitura rápida da matriz</h3>
+      <ul class="text-sm text-slate-400 space-y-2 list-disc pl-5">
+        <li><strong class="text-slate-300">As duas escalas de Intelligence não são a mesma coisa.</strong> A tabela de planos e a página de cada modelo publicam versões diferentes do mesmo índice (a página fica 5,6 pontos abaixo, em média). Consequência prática: o <strong class="text-slate-300">DeepSeek V4.1 Flash</strong> aparece como "not yet scored" na tabela do plano, mas na escala da própria página faz <strong class="text-slate-300">39,5 contra 35,0 do V4 Flash</strong> — é o modelo mais forte da família, não o mais fraco. É esse número que a coluna <span class="mono">‡</span> traz para a matriz, já convertido.</li>
+        <li>O tier <em>flash</em> (DeepSeek V4 Flash, GLM-5.3 Flash, Qwen 3.7/3.8 Flash, MiMo, Tencent Hy3) domina custo-benefício: cache read entre $0,0028 e $0,035 por 1M, contra $0,20–$1,00 dos modelos de fronteira (Sonnet 5 até Fable 5 e GPT-6 Astra).</li>
+        <li>Cache read é o campo que mais pesa: 98% dos tokens de uma requisição típica. Os mais baratos são as variantes <strong class="text-slate-300">Contributor</strong> do Muse Spark, a $0,002 por 1M — os MiMo vêm em seguida ($0,0028 e $0,0036), e não na frente. Pelo ratio puro IQ/US$ o MiMo V2.5 (IQ 28,2) ainda sobe para 5º, só por ser barato; pelo equilíbrio (⭐) cai para 10º. É a diferença entre "barato" e "barato e inteligente".</li>
+        <li>As variantes <strong class="text-slate-300">Contributor</strong> do Muse Spark (1.2 e 1.3) são o outlier de preço-performance: mesmo IQ 46,8 / 53,0 do modelo cheio, com input a $0,10 e cache read a $0,002 — cerca de 1/12 do preço, no mesmo teto de $20. São as duas primeiras do ranking e rendem ~91 mil requisições/mês.</li>
+        <li>A <strong class="text-slate-300">inteligência máxima não é barata em volume</strong>: o Muse Spark 1.3 (IQ 53,0) e o Kimi K3 (IQ 50,2) rendem só 2.140 e 980 requisições/mês, com o mesmo teto de $20 do Contributor que rende 90.900. Mesmo teto, 42× e 93× menos autonomia.</li>
+        <li>Teto $70 e preço baixo quase nunca vêm juntos: os quatro modelos de teto cheio (GPT-5.6 Sol, GLM-5.2, Tencent Hy3, Qwen 3.8 27B) rendem de 2.070 a 35.400 req/mês, e só o <strong class="text-slate-300">Tencent Hy3</strong> fica abaixo de $0,002 por requisição ($0,00195, contra $0,0028, $0,0148 e $0,0338 dos outros três).</li>
+        <li><strong class="text-slate-300">Menor custo por requisição ≠ maior volume.</strong> Os dois se multiplicam: Muse Spark Contributor é o mais barato de rodar ($0,000212/req) mas com teto de $20 rende 90.900 req/mês; o DeepSeek V4 Flash custa 73% mais por requisição ($0,000366) e ainda assim rende 154.000, porque o teto dele é $60. Teto e preço andam juntos.</li>
+        <li>Os 3 modelos grátis — Laguna S 2.1, LongCat 2.0 e Ling 3.0 Flash Sante — custam zero crédito. LongCat 2.0 e Ling 3.0 Flash Sante têm teto de 100 requisições/dia; só o LongCat 2.0 tem IQ publicado (25,8 — o mais baixo entre os grátis, embora a tabela tenha pagos ainda mais baixos, como o Haiku 4.5 em 17,4).</li>
+        <li>Kimi K3 ($3,00/$15,00) entrega 129 pontos de IQ por dólar: 42º de 52 no ratio, contra 12.740 do Contributor. O fundo da lista é de modelos fechados de teto alto (Qwen 3.7 Max, GPT-5.3 Codex, GPT-5.5 e GPT-5.6 Sol, todos entre 66 e 78) — nesse tier paga-se por teto de capacidade, não por eficiência.</li>
+        <li>No GOAT, DeepSeek V4 Flash entrega ~154 mil requisições/mês; GPT-5.6 Sol, ~2 mil. Mesmo plano, mesma assinatura: duas ordens de magnitude de diferença.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="text-xs text-slate-600 border-t border-slate-800 pt-6 pb-10 space-y-1">
+    <p>Dados de preço, contexto, plano mínimo, Intelligence, teto de créditos e estimativas de requisições extraídos da documentação oficial do Command Code (páginas de planos Go/GOAT/Pro/Max, Available Models e Pricing &amp; Limits) em 14/set/2026.</p>
+    <p>Páginas oficiais: <a class="text-sky-500 hover:underline" href="https://commandcode.ai/docs/resources/pricing-limits">Pricing &amp; Limits</a> ·
+      <a class="text-sky-500 hover:underline" href="https://commandcode.ai/docs/plans/go">Go</a> ·
+      <a class="text-sky-500 hover:underline" href="https://commandcode.ai/docs/plans/goat">GOAT</a> ·
+      <a class="text-sky-500 hover:underline" href="https://commandcode.ai/docs/plans/pro">Pro</a> ·
+      <a class="text-sky-500 hover:underline" href="https://commandcode.ai/docs/plans/max">Max</a> ·
+      <a class="text-sky-500 hover:underline" href="https://commandcode.ai/models">Catálogo de modelos</a></p>
+    <p>Preços e deals mudam; a página de uso do Studio sempre reflete o valor real cobrado por requisição.</p>
+  </footer>
+</main>
+
+<script>
+/* ============================================================
+   DADOS — catálogo Command Code
+   inp/out/cr = USD por 1M tokens (input / output / cache read)
+   cw   = cache write (null quando o provider não cobra)
+   base = preço cheio antes do deal (para modelos com desconto)
+   peak = [input, output] em horário de pico (DeepSeek)
+   iq   = Intelligence index · tps = tokens/s · min = plano mínimo
+   cred = teto mensal de crédito DESTE modelo no plano GOAT (USD)
+   req  = requisições/mês publicadas por plano (null = não serve / não publicado)
+   ============================================================ */
+const PROFILE = { input: 800, cache: 50000, output: 160 };
+const WINDOW = { h5: 0.20, week: 0.50 };   // frações do teto, confirmadas na doc
+
+const MODELS = [
+  // ---------- OPEN SOURCE ----------
+  {id:"deepseek/deepseek-v4-pro",n:"DeepSeek V4 Pro",v:"DeepSeek",ctx:"1M",inp:0.66,out:1.98,cr:0.022,cw:null,iq:42.1,tps:62,min:"go",cred:20,tags:["reasoning"],peak:[1.32,3.96],req:{goat:9880,pro:14800,max:74100}},
+  {id:"deepseek/deepseek-v4-flash",n:"DeepSeek V4 Flash",v:"DeepSeek",ctx:"1M",inp:0.15,out:0.60,cr:0.003,cw:null,iq:41.0,tps:118,min:"go",cred:60,tags:["reasoning"],peak:[0.30,1.20],req:{goat:154000,pro:179000,max:385000}},
+  {id:"deepseek/deepseek-v4-flash-vision-exp",n:"DeepSeek V4 Flash Vision",v:"DeepSeek",ctx:"1M",inp:0.15,out:0.60,cr:0.003,cw:null,iq:40.7,tps:120,min:"go",cred:20,tags:["vision","reasoning"],peak:[0.30,1.20],req:{goat:51300,pro:69800,max:256000}},
+  {id:"deepseek/deepseek-v4-flash-fast",n:"DeepSeek V4 Flash Fast",v:"DeepSeek",ctx:"1M",inp:0.28,out:0.56,cr:0.07,cw:null,iq:null,tps:null,min:"go",cred:20,tags:["reasoning"],req:{goat:5210,pro:7820,max:39100}},
+  {id:"deepseek/deepseek-v4.1-flash",n:"DeepSeek V4.1 Flash",v:"DeepSeek",ctx:"1M",inp:0.15,out:0.60,cr:0.003,cw:null,iq:null,aa:39.5,tps:null,min:"go",cred:60,tags:["vision","reasoning","deal"],peak:[0.30,1.20],req:{goat:154000,pro:179000,max:385000}},
+  {id:"moonshotai/Kimi-K3",n:"Kimi K3",v:"Moonshot",ctx:"1M",inp:3.00,out:15.00,cr:0.30,cw:null,iq:50.2,tps:42,min:"go",cred:20,tags:["reasoning"],req:{goat:980,pro:1470,max:7350}},
+  {id:"moonshotai/Kimi-K2.7-Code",n:"Kimi K2.7 Code",v:"Moonshot",ctx:"256K",inp:0.95,out:4.00,cr:0.19,cw:null,iq:32.7,tps:66,min:"go",cred:60,tags:["vision"],req:{goat:5420,pro:6330,max:13600}},
+  {id:"moonshotai/Kimi-K2.7-Code-Highspeed",n:"Kimi K2.7 Code HighSpeed",v:"Moonshot",ctx:"262K",inp:1.90,out:8.00,cr:0.38,cw:null,iq:null,tps:null,min:"go",cred:20,tags:["vision"],req:{goat:904,pro:1360,max:6780}},
+  {id:"moonshotai/Kimi-K2.6",n:"Kimi K2.6",v:"Moonshot",ctx:"256K",inp:0.95,out:4.00,cr:0.16,cw:null,iq:35.8,tps:null,min:"go",cred:20,tags:["vision"],req:{goat:null,pro:null,max:15700}},
+  {id:"moonshotai/Kimi-K2.5",n:"Kimi K2.5",v:"Moonshot",ctx:"256K",inp:0.60,out:3.00,cr:0.10,cw:null,iq:27.6,tps:null,min:"go",cred:20,tags:["vision"],req:{goat:null,pro:null,max:24700}},
+  {id:"z-ai/glm-5.3-flash",n:"GLM-5.3 Flash",v:"Z.ai",ctx:"1M",inp:0.15,out:0.50,cr:0.03,cw:null,iq:46.2,tps:59,min:"go",cred:40,tags:["reasoning"],req:{goat:23600,pro:29500,max:88500}},
+  {id:"zai-org/GLM-5.3",n:"GLM-5.3",v:"Z.ai",ctx:"1M",inp:1.40,out:4.40,cr:0.26,cw:null,iq:48.6,tps:75,min:"go",cred:20,tags:["reasoning"],req:{goat:1350,pro:2030,max:10100}},
+  {id:"zai-org/GLM-5.2",n:"GLM-5.2",v:"Z.ai",ctx:"1M",inp:1.40,out:4.40,cr:0.26,cw:null,iq:42.1,tps:68,min:"go",cred:70,tags:["reasoning"],req:{goat:4740,pro:5410,max:10100}},
+  {id:"zai-org/GLM-5.2-Fast",n:"GLM-5.2 Fast",v:"Z.ai",ctx:"1M",inp:3.00,out:10.25,cr:0.50,cw:null,iq:null,tps:null,min:"go",cred:20,tags:[],req:{goat:691,pro:1040,max:5180}},
+  {id:"zai-org/GLM-5.1",n:"GLM-5.1",v:"Z.ai",ctx:"200K",inp:1.40,out:4.40,cr:0.26,cw:null,iq:31.9,tps:null,min:"go",cred:20,tags:[],req:{goat:null,pro:null,max:10100}},
+  {id:"zai-org/GLM-5",n:"GLM-5",v:"Z.ai",ctx:"200K",inp:1.00,out:3.20,cr:0.20,cw:null,iq:32.4,tps:null,min:"go",cred:20,tags:[],req:{goat:null,pro:null,max:13300}},
+  {id:"MiniMaxAI/MiniMax-M3",n:"MiniMax M3",v:"MiniMax",ctx:"1M",inp:0.30,out:1.20,cr:0.06,cw:null,iq:35.7,tps:96,min:"go",cred:47,tags:["vision","reasoning","deal"],base:[0.60,2.40,0.12],req:{goat:13900,pro:16800,max:44200}},
+  {id:"MiniMaxAI/MiniMax-M2.7",n:"MiniMax M2.7",v:"MiniMax",ctx:"200K",inp:0.30,out:1.20,cr:0.06,cw:null,iq:30.1,tps:null,min:"go",cred:20,tags:[],req:{goat:null,pro:null,max:44200}},
+  {id:"MiniMaxAI/MiniMax-M2.5",n:"MiniMax M2.5",v:"MiniMax",ctx:"200K",inp:0.30,out:1.20,cr:0.03,cw:null,iq:26.8,tps:null,min:"go",cred:20,tags:[],req:{goat:null,pro:null,max:79400}},
+  {id:"xiaomi/mimo-v2.5-pro",n:"MiMo V2.5 Pro",v:"Xiaomi",ctx:"1M",inp:0.435,out:0.87,cr:0.0036,cw:null,iq:32.6,tps:41,min:"go",cred:20,tags:["deal"],base:[2.00,6.00,0.40],req:{goat:28500,pro:42700,max:214000}},
+  {id:"xiaomi/mimo-v2.5",n:"MiMo V2.5",v:"Xiaomi",ctx:"1M",inp:0.14,out:0.28,cr:0.0028,cw:null,iq:28.2,tps:61,min:"go",cred:30,tags:["deal"],base:[0.80,4.00,0.16],req:{goat:97400,pro:130000,max:487000}},
+  {id:"Qwen/Qwen3.8-Max-0902",n:"Qwen 3.8 Max 0902",v:"Alibaba",ctx:"1M",inp:2.00,out:6.00,cr:0.25,cw:null,iq:null,tps:null,min:"go",cred:20,tags:["reasoning"],req:{goat:1310,pro:1960,max:9800}},
+  {id:"Qwen/Qwen3.8-Max",n:"Qwen 3.8 Max",v:"Alibaba",ctx:"1M",inp:2.00,out:6.00,cr:0.25,cw:2.50,iq:46.9,tps:38,min:"go",cred:20,tags:["reasoning"],req:{goat:1310,pro:1960,max:9800}},
+  {id:"Qwen/Qwen3.8-27B",n:"Qwen 3.8 27B",v:"Alibaba",ctx:"262K",inp:0.40,out:3.00,cr:0.04,cw:null,iq:41.4,tps:46,min:"go",cred:70,tags:["vision","reasoning"],req:{goat:24000,pro:27400,max:51400}},
+  {id:"Qwen/Qwen3.8-Flash",n:"Qwen 3.8 Flash",v:"Alibaba",ctx:"1M",inp:0.16,out:0.47,cr:0.016,cw:null,iq:null,tps:null,min:"go",cred:20,tags:["reasoning"],req:{goat:19600,pro:29400,max:147000}},
+  {id:"Qwen/Qwen3.7-Max",n:"Qwen 3.7 Max",v:"Alibaba",ctx:"1M",inp:2.50,out:7.50,cr:0.50,cw:3.13,iq:36.6,tps:null,min:"go",cred:33,tags:[],req:{goat:1160,pro:1510,max:5260}},
+  {id:"Qwen/Qwen3.7-Plus",n:"Qwen 3.7 Plus",v:"Alibaba",ctx:"1M",inp:0.40,out:1.60,cr:0.08,cw:0.50,iq:31.9,tps:55,min:"go",cred:33,tags:[],req:{goat:7110,pro:9270,max:32300}},
+  {id:"Qwen/Qwen3.7-Flash",n:"Qwen 3.7 Flash",v:"Alibaba",ctx:"1M",inp:0.03,out:0.13,cr:0.006,cw:0.038,iq:null,tps:null,min:"go",cred:20,tags:["reasoning"],req:{goat:null,pro:null,max:429000}},
+  {id:"Qwen/Qwen3.6-Max-Preview",n:"Qwen 3.6 Max Preview",v:"Alibaba",ctx:"200K",inp:1.30,out:7.80,cr:0.26,cw:1.63,iq:32.9,tps:null,min:"go",cred:20,tags:[],req:{goat:null,pro:null,max:9620}},
+  {id:"Qwen/Qwen3.6-Plus",n:"Qwen 3.6 Plus",v:"Alibaba",ctx:"200K",inp:0.50,out:3.00,cr:0.10,cw:null,iq:31.5,tps:null,min:"go",cred:33,tags:[],req:{goat:5500,pro:7170,max:25000}},
+  {id:"meituan/LongCat-2.0:free",n:"LongCat 2.0",v:"Meituan",ctx:"1M",inp:0,out:0,cr:0,cw:null,iq:25.8,tps:49,min:"go",cred:0,tags:["free"],req:{goat:0,pro:0,max:0}},
+  {id:"stepfun/Step-3.7-Flash",n:"Step 3.7 Flash",v:"StepFun",ctx:"256K",inp:0.20,out:1.15,cr:0.04,cw:null,iq:22.9,tps:87,min:"go",cred:20,tags:["vision","reasoning"],req:{goat:8370,pro:12600,max:62800}},
+  {id:"stepfun/Step-3.5-Flash",n:"Step 3.5 Flash",v:"StepFun",ctx:"1M",inp:0.10,out:0.30,cr:0.02,cw:null,iq:19.5,tps:null,min:"go",cred:20,tags:[],req:{goat:17500,pro:26300,max:132000}},
+  {id:"tencent/hy3-paid",n:"Tencent Hy3",v:"Tencent",ctx:"262K",inp:0.14,out:0.58,cr:0.035,cw:null,iq:32.4,tps:99,min:"go",cred:70,tags:["reasoning"],req:{goat:35400,pro:40400,max:75800}},
+  {id:"tencent/hy4-preview",n:"Tencent Hy4 Preview",v:"Tencent",ctx:"1M",inp:0.834,out:2.501,cr:0.042,cw:null,iq:null,tps:null,min:"go",cred:20,tags:["reasoning"],req:{goat:6120,pro:9180,max:45900}},
+  {id:"nvidia/nemotron-3-ultra-550b-a55b",n:"Nemotron 3 Ultra",v:"NVIDIA",ctx:"1M",inp:0.60,out:2.40,cr:0.12,cw:null,iq:29.3,tps:158,min:"go",cred:20,tags:["reasoning"],req:{goat:2870,pro:4310,max:21600}},
+  {id:"thinkingmachines/inkling",n:"Inkling",v:"Thinking Machines",ctx:"256K",inp:1.00,out:4.05,cr:0.17,cw:null,iq:32.2,tps:65,min:"go",cred:20,tags:["vision","reasoning"],req:{goat:1980,pro:2970,max:14800}},
+  {id:"thinkingmachines/inkling-small",n:"Inkling Small",v:"Thinking Machines",ctx:"1M",inp:0.50,out:1.20,cr:0.10,cw:null,iq:32.2,tps:133,min:"go",cred:20,tags:["reasoning"],req:{goat:3550,pro:5320,max:26600}},
+  {id:"poolside/laguna-s-2.1-free",n:"Laguna S 2.1",v:"Poolside",ctx:"256K",inp:0,out:0,cr:0,cw:null,iq:null,tps:null,min:"go",cred:0,tags:["free"],req:{goat:0,pro:0,max:0}},
+  {id:"inclusionai/ling-3.0-flash-sante:free",n:"Ling 3.0 Flash Sante",v:"InclusionAI",ctx:"262K",inp:0,out:0,cr:0,cw:null,iq:null,tps:null,min:"go",cred:0,tags:["free"],req:{goat:0,pro:0,max:0}},
+
+  // ---------- PREMIUM ----------
+  {id:"claude-sonnet-5",n:"Claude Sonnet 5",v:"Anthropic",ctx:"1M",inp:2.00,out:10.00,cr:0.20,cw:2.50,iq:45.1,tps:80,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:1490,max:7460}},
+  {id:"claude-sonnet-4-6",n:"Claude Sonnet 4.6",v:"Anthropic",ctx:"1M",inp:3.00,out:15.00,cr:0.30,cw:3.75,iq:38.5,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:995,max:4980}},
+  {id:"claude-haiku-4-5-20251001",n:"Claude Haiku 4.5",v:"Anthropic",ctx:"200K",inp:1.00,out:5.00,cr:0.10,cw:1.25,iq:17.4,tps:91,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:2990,max:14900}},
+  {id:"claude-opus-5",n:"Claude Opus 5",v:"Anthropic",ctx:"1M",inp:5.00,out:25.00,cr:0.50,cw:6.25,iq:null,aa:50.7,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:2990}},
+  {id:"claude-opus-4-8",n:"Claude Opus 4.8",v:"Anthropic",ctx:"1M",inp:5.00,out:25.00,cr:0.50,cw:6.25,iq:null,aa:42.0,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:2990}},
+  {id:"claude-opus-4-7",n:"Claude Opus 4.7",v:"Anthropic",ctx:"1M",inp:5.00,out:25.00,cr:0.50,cw:6.25,iq:null,aa:40.7,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:2990}},
+  {id:"claude-fable-5-1",n:"Claude Fable 5.1",v:"Anthropic",ctx:"1M",inp:10.00,out:50.00,cr:0.25,cw:12.50,iq:null,aa:53.4,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:3390}},
+  {id:"claude-fable-5",n:"Claude Fable 5",v:"Anthropic",ctx:"1M",inp:10.00,out:50.00,cr:1.00,cw:12.50,iq:null,aa:49.7,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:1490}},
+  {id:"gpt-6-astra",n:"GPT-6 Astra",v:"OpenAI",ctx:"1.05M",inp:10.00,out:50.00,cr:1.00,cw:12.50,iq:null,aa:52.8,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:1520}},
+  {id:"gpt-5.6-sol",n:"GPT-5.6 Sol",v:"OpenAI",ctx:"1.1M",inp:5.00,out:30.00,cr:0.50,cw:6.25,iq:51.3,tps:73,min:"goat",cred:70,tags:["reasoning"],req:{goat:2070,pro:2370,max:4440}},
+  {id:"gpt-5.6-terra",n:"GPT-5.6 Terra",v:"OpenAI",ctx:"1.05M",inp:2.00,out:12.00,cr:0.20,cw:2.50,iq:46.8,tps:121,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:1480,max:7400}},
+  {id:"gpt-5.6-luna",n:"GPT-5.6 Luna",v:"OpenAI",ctx:"1.1M",inp:0.20,out:1.20,cr:0.02,cw:0.25,iq:43.4,tps:117,min:"go",cred:20,tags:["reasoning"],req:{goat:14800,pro:22200,max:111000}},
+  {id:"gpt-5.5",n:"GPT-5.5",v:"OpenAI",ctx:"400K",inp:5.00,out:30.00,cr:0.50,cw:null,iq:45.6,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:592,max:2960}},
+  {id:"gpt-5.4",n:"GPT-5.4",v:"OpenAI",ctx:"400K",inp:2.50,out:15.00,cr:0.25,cw:null,iq:42.8,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:1180,max:5920}},
+  {id:"gpt-5.4-mini",n:"GPT-5.4 Mini",v:"OpenAI",ctx:"400K",inp:0.75,out:4.50,cr:0.075,cw:null,iq:31.9,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:3940,max:19700}},
+  {id:"gpt-5.3-codex",n:"GPT-5.3 Codex",v:"OpenAI",ctx:"400K",inp:2.00,out:8.00,cr:0.50,cw:null,iq:36.9,tps:143,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:717,max:3590}},
+  {id:"google/gemini-3.8-flash",n:"Gemini 3.8 Flash",v:"Google",ctx:"1M",inp:1.50,out:7.50,cr:0.15,cw:null,iq:47.1,tps:356,min:"goat",cred:40,tags:["reasoning"],req:{goat:3920,pro:4900,max:14700}},
+  {id:"google/gemini-3.7-flash",n:"Gemini 3.7 Flash",v:"Google",ctx:"1M",inp:1.50,out:7.50,cr:0.15,cw:0.08334,iq:45.2,tps:325,min:"goat",cred:40,tags:["reasoning"],req:{goat:3920,pro:4900,max:14700}},
+  {id:"google/gemini-3.6-flash",n:"Gemini 3.6 Flash",v:"Google",ctx:"1M",inp:1.50,out:7.50,cr:0.15,cw:null,iq:40.3,tps:189,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:1960,max:9800}},
+  {id:"google/gemini-3.5-flash",n:"Gemini 3.5 Flash",v:"Google",ctx:"1M",inp:1.50,out:9.00,cr:0.15,cw:null,iq:39.7,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:1900,max:9520}},
+  {id:"google/gemini-3.5-flash-lite",n:"Gemini 3.5 Flash Lite",v:"Google",ctx:"1M",inp:0.30,out:2.50,cr:0.03,cw:null,iq:27.6,tps:339,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:8930,max:44600}},
+  {id:"google/gemini-3.1-flash-lite",n:"Gemini 3.1 Flash Lite",v:"Google",ctx:"1M",inp:0.25,out:1.50,cr:0.03,cw:null,iq:19.3,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:10000,max:50000}},
+  {id:"sakana/fugu-ultra",n:"Fugu Ultra",v:"Sakana",ctx:"1M",inp:5.00,out:30.00,cr:0.50,cw:null,iq:null,tps:null,min:"max",cred:null,tags:["reasoning"],req:{goat:null,pro:null,max:2860}},
+  {id:"meta/muse-spark-1.1",n:"Muse Spark 1.1",v:"Meta",ctx:"1.05M",inp:1.25,out:4.25,cr:0.15,cw:null,iq:41.2,tps:null,min:"pro",cred:null,tags:["reasoning"],req:{goat:null,pro:2140,max:10700}},
+  {id:"meta/muse-spark-1.2",n:"Muse Spark 1.2",v:"Meta",ctx:"1M",inp:1.25,out:4.25,cr:0.15,cw:null,iq:46.8,tps:262,min:"goat",cred:20,tags:["reasoning"],req:{goat:2140,pro:3210,max:16000}},
+  {id:"meta/muse-spark-1.2-contributor",n:"Muse Spark 1.2 Contributor",v:"Meta",ctx:"1M",inp:0.10,out:0.20,cr:0.002,cw:null,iq:46.8,tps:262,min:"go",cred:20,tags:["reasoning","deal"],req:{goat:90900,pro:136000,max:682000}},
+  {id:"meta/muse-spark-1.3",n:"Muse Spark 1.3",v:"Meta",ctx:"1M",inp:1.25,out:4.25,cr:0.15,cw:null,iq:53.0,tps:221,min:"goat",cred:20,tags:["reasoning"],req:{goat:2140,pro:3210,max:16000}},
+  {id:"meta/muse-spark-1.3-contributor",n:"Muse Spark 1.3 Contributor",v:"Meta",ctx:"1M",inp:0.10,out:0.20,cr:0.002,cw:null,iq:53.0,tps:221,min:"go",cred:20,tags:["reasoning","deal"],req:{goat:90900,pro:136000,max:682000}},
+  {id:"xai/grok-4.5",n:"Grok 4.5",v:"xAI",ctx:"500K",inp:2.00,out:6.00,cr:0.50,cw:null,iq:45.5,tps:53,min:"go",cred:20,tags:["reasoning"],req:{goat:719,pro:1080,max:5400}},
+  {id:"xai/grok-4.6",n:"Grok 4.6",v:"xAI",ctx:"500K",inp:2.00,out:6.00,cr:0.50,cw:null,iq:50.6,tps:57,min:"goat",cred:20,tags:["reasoning"],req:{goat:719,pro:1080,max:5400}}
+];
+
+const PREMIUM_VENDORS = ["Anthropic","OpenAI","Google","Sakana","Meta","xAI"];
+const PLAN_RANK = { go:0, goat:1, pro:2, max:3, max10:3, max20:3 };
+const PLANS = [
+  {key:"go",    name:"Go",         price:1,   credits:10,  reqKey:null,   models:"Open-source + alguns premium", limits:"$3 / 5h · $6 / semanal", note:"Entrada global. Sem acesso à API."},
+  {key:"goat",  name:"GOAT",       price:10,  credits:70,  reqKey:"goat", models:"30+ open + alguns closed",     limits:"$14 / 5h · $35 / semanal", note:"7× de multiplicador — o melhor valor do mercado."},
+  {key:"pro",   name:"Pro",        price:20,  credits:80,  reqKey:"pro",  models:"45+ open + Claude/GPT/Gemini",  limits:"$16 / 5h · $40 / semanal", note:"Premium com até $20 de teto por modelo."},
+  {key:"max10", name:"Max 10×",    price:100, credits:150, reqKey:"max",  models:"Todos (Opus, Fable, Fugu)",      limits:"$45 / 5h · $90 / semanal", note:"$150 standard + $100 premium."},
+  {key:"max20", name:"Max 20×",    price:200, credits:300, reqKey:"max",  models:"Todos (Opus, Fable, Fugu)",      limits:"$90 / 5h · $180 / semanal", note:"$300 standard + $200 premium."},
+  {key:"provider", name:"Provider", price:15, credits:null, reqKey:null,  models:"Todos via API (pay-as-you-go)",  limits:"sem limite (pré-pago)",    note:"API OpenAI/Anthropic-compatível, ao custo do modelo."}
+];
+
+/* ============================ HELPERS ============================ */
+const $ = s => document.querySelector(s);
+// dinheiro: nunca menos de 2 casas, nunca zero à direita sobrando
+const trim = (s, min) => {
+  const [i, d] = s.split(".");
+  if (d.length <= min) return s;
+  let t = d.replace(/0+$/, "");
+  if (t.length < min) t = d.slice(0, min);
+  return i + "." + t;
+};
+const usd = v => v === 0 ? "$0"
+  : v >= 1 ? "$" + v.toFixed(2)
+  : v >= 0.01 ? "$" + trim(v.toFixed(3), 2)
+  : v >= 0.001 ? "$" + trim(v.toFixed(4), 3)
+  : "$" + trim(v.toFixed(5), 4);
+const usdReq = v => v === 0 ? "$0"
+  : v < 0.001 ? "$" + trim(v.toFixed(6), 4)
+  : v < 0.01 ? "$" + trim(v.toFixed(5), 4)
+  : "$" + trim(v.toFixed(4), 3);
+const int = n => n == null ? "—" : Math.round(n).toLocaleString("pt-BR");
+
+// custo real de uma requisição agêntica + custo efetivo por 1M tokens
+MODELS.forEach(m => {
+  m.isOpen = !PREMIUM_VENDORS.includes(m.v);
+  m.planRank = PLAN_RANK[m.min];
+  m.isFree = m.tags.includes("free");
+  m.isDeal = m.tags.includes("deal");
+  m.onGoat = m.planRank <= PLAN_RANK.goat;
+  if (m.isFree) {
+    m.costReq = 0; m.blend = 0; m.value = null;
+  } else {
+    m.costReq = (PROFILE.input * m.inp + PROFILE.cache * m.cr + PROFILE.output * m.out) / 1e6;
+    m.blend = m.costReq / (PROFILE.input + PROFILE.cache + PROFILE.output) * 1e6;
+    m.value = (m.iq != null && m.blend > 0) ? m.iq / m.blend : null;
+  }
+});
+
+/* ---- nota estimada para quem a tabela de planos não pontua ----
+   A página individual de cada modelo publica o índice do Artificial Analysis v4.3,
+   uma versão mais NOVA da mesma escala. Nos 53 modelos que aparecem nas duas, a página
+   fica em média 5,6 pontos abaixo (amplitude 2,0–8,1, desvio 1,4). Trago os não pontuados
+   para a escala da tabela com essa diferença — sempre marcados como estimativa (‡).   */
+const AA_OFFSET = 5.6;
+MODELS.forEach(m => {
+  m.iqEst = m.iq ?? (m.aa != null ? +(m.aa + AA_OFFSET).toFixed(1) : null);
+});
+
+/* req/mês por plano: número oficial quando existe, senão teto ÷ custo por requisição */
+function reqMonth(m, planKey) {
+  if (m.isFree) return { n: 0, est: false };
+  const pub = m.req[planKey];
+  if (pub != null) return { n: pub, est: false };
+  if (planKey === "goat" && m.cred > 0 && m.costReq > 0) return { n: m.cred / m.costReq, est: true };
+  return null;
+}
+function reqOf(m, plan) {
+  if (!plan.reqKey) return null;
+  const r = reqMonth(m, plan.reqKey);
+  if (!r) return null;
+  return { n: plan.key === "max20" ? r.n * 2 : r.n, est: r.est };
+}
+
+// ranking de custo-benefício (ratio puro) + rótulo
+const RANKED = MODELS.filter(m => m.value != null).sort((a, b) => b.value - a.value);
+MODELS.filter(m => m.isFree).forEach((m, i) => m.rankLabel = "FREE" + (i + 1));
+RANKED.forEach((m, i) => m.rankLabel = (i + 1) + "º");
+
+/* ---- "Inteligente e barato": exige as DUAS pontas ----
+   Normaliza inteligência (linear) e barateza (escala log, porque preço varia
+   em ordens de magnitude) e combina por média geométrica. Um modelo só vai bem
+   se for bom nos dois eixos — barato porém fraco é penalizado, ao contrário do
+   ratio puro IQ/US$, que favorece o mais barato mesmo quando é ruim.        */
+const SCORED = MODELS.filter(m => m.iq != null && m.blend > 0);
+(function computeBalance() {
+  const iqs = SCORED.map(m => m.iq), blends = SCORED.map(m => m.blend);
+  const iqMin = Math.min(...iqs), iqMax = Math.max(...iqs);
+  const bMin = Math.min(...blends), bMax = Math.max(...blends);
+  const lg = Math.log;
+  SCORED.forEach(m => {
+    const nIq = (m.iq - iqMin) / (iqMax - iqMin);
+    const nCheap = (lg(bMax) - lg(m.blend)) / (lg(bMax) - lg(bMin));
+    m.balance = Math.sqrt(nIq * nCheap) * 100;
+  });
+})();
+const BALANCED = SCORED.slice().sort((a, b) => b.balance - a.balance);
+const BALANCE_TOP = BALANCED[0];
+
+// recortes usados nos destaques e nas recomendações
+const NO_FREE  = MODELS.filter(m => !m.isFree);
+const CRED_MAX = Math.max(...MODELS.map(m => m.cred || 0));
+const CRED_TIERS = [...new Set(NO_FREE.filter(m => m.onGoat).map(m => m.cred))].sort((a, b) => b - a);
+const byBalance = (a, b) => (b.balance ?? -1) - (a.balance ?? -1);
+const byIq      = (a, b) => (b.iq ?? -1) - (a.iq ?? -1);
+const byTps     = (a, b) => (b.tps ?? -1) - (a.tps ?? -1);
+const byCpr     = (a, b) => a.costReq - b.costReq || (b.iq ?? -1) - (a.iq ?? -1);
+const byVolume  = (a, b) => (reqMonth(b, "goat")?.n || 0) - (reqMonth(a, "goat")?.n || 0);
+
+const PICKS = {
+  best:      BALANCED[0],
+  smartest:  SCORED.slice().sort(byIq)[0],
+  fastest:   MODELS.slice().sort(byTps)[0],
+  cheapest:  NO_FREE.slice().sort(byCpr)[0],
+  volume:    MODELS.filter(m => m.onGoat).slice().sort(byVolume)[0],
+  noDeal:    BALANCED.filter(m => !m.isDeal)[0],
+  bigBudget: MODELS.filter(m => m.cred === CRED_MAX).sort(byBalance)[0],
+  premium:   MODELS.filter(m => m.planRank > PLAN_RANK.goat && m.iq != null).sort(byIq)[0],
+  free:      MODELS.filter(m => m.isFree && m.iq != null).sort(byIq)[0]
+};
+
+/* ============================ PLANOS ============================ */
+function renderPlans() {
+  $("#planGrid").innerHTML = PLANS.map(p => {
+    const mult = p.credits ? (p.credits / p.price) : null;
+    const isProvider = p.key === "provider";
+    return `
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col gap-2 hover:border-sky-600/60 transition">
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-white">${p.name}</span>
+        ${mult ? `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">${mult.toFixed(0)}× crédito</span>`
+               : `<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-400">pay-as-you-go</span>`}
+      </div>
+      <div class="flex items-end gap-1">
+        <span class="text-3xl font-black ${mult ? 'grad-text' : 'text-slate-300'}">$${p.price}</span>
+        <span class="text-xs text-slate-500 mb-1">/mês</span>
+      </div>
+      <div class="text-sm ${isProvider ? 'text-slate-400' : 'text-slate-300'} font-semibold">
+        ${p.credits ? "$" + p.credits + " de créditos" : "paga só o consumo"}
+      </div>
+      <div class="text-xs text-slate-400 leading-relaxed flex-1">
+        <div class="mb-1"><span class="text-slate-500">Modelos:</span> ${p.models}</div>
+        <div><span class="text-slate-500">Janelas:</span> ${p.limits}</div>
+      </div>
+      <div class="text-[11px] text-slate-500 border-t border-slate-800 pt-2">${p.note}</div>
+      <button data-plan="${p.key}" class="planPick text-[11px] rounded-lg border border-slate-700 hover:border-sky-500 hover:text-sky-300 py-1.5 text-slate-300 transition">Filtrar por este plano</button>
+    </div>`;
+  }).join("");
+  document.querySelectorAll(".planPick").forEach(b => b.onclick = () => {
+    $("#fPlan").value = b.dataset.plan === "provider" ? "max20" : b.dataset.plan;
+    $("#fOnlyPlan").checked = true;
+    render();
+  });
+}
+
+/* ============================ KPIs ============================ */
+function kpiCard(label, value, sub, accent) {
+  return `<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+    <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">${label}</div>
+    <div class="text-xl font-bold ${accent} mt-1 leading-snug">${value}</div>
+    <div class="text-xs text-slate-400 mt-1 leading-relaxed">${sub}</div>
+  </div>`;
+}
+
+function renderKPIs() {
+  const p = PICKS;
+  const byCache = NO_FREE.slice().sort((a, b) => a.cr - b.cr || (b.iq ?? -1) - (a.iq ?? -1));
+  const nonDeal = NO_FREE.filter(m => !m.isDeal).sort((a, b) => a.cr - b.cr)[0];
+  const cheapTier = NO_FREE.filter(m => m.onGoat && m.cred === Math.min(...CRED_TIERS));
+  const vol = reqMonth(p.volume, "goat").n;
+
+  $("#kpiGrid").innerHTML =
+    kpiCard("Inteligente e barato", p.best.n,
+      `equilíbrio <span class="mono text-sky-300">${p.best.balance.toFixed(0)}</span>/100 · IQ ${p.best.iq} a ${usdReq(p.best.costReq)}/req<br>teto $${p.best.cred} (GOAT) · ${int(reqMonth(p.best, "goat").n)} req/mês`, "text-emerald-400") +
+    kpiCard("Maior Intelligence (nota oficial)", p.smartest.n,
+      `IQ <span class="text-slate-200 font-bold">${p.smartest.iq}</span> · ${usdReq(p.smartest.costReq)}/req · ${usd(p.smartest.out)} out<br>teto $${p.smartest.cred} · ${int(reqMonth(p.smartest, "goat").n)} req/mês`, "text-violet-400") +
+    kpiCard("Maior volume no GOAT", p.volume.n,
+      `<span class="text-slate-200 font-bold">${int(vol)}</span> requisições/mês · teto $${p.volume.cred}<br>${usdReq(p.volume.costReq)}/req · IQ ${p.volume.iq ?? "s/ nota"} · ${usd(p.volume.cr)} cache`, "text-sky-400") +
+    kpiCard("Menor custo por requisição", p.cheapest.n,
+      `<span class="text-slate-200 font-bold">${usdReq(p.cheapest.costReq)}</span> por requisição agêntica<br>IQ ${p.cheapest.iq ?? "s/ nota"} · teto $${p.cheapest.cred} (GOAT)`, "text-amber-400") +
+    kpiCard("Cache read mais barato", byCache[0].n,
+      `<span class="text-slate-200 font-bold">${usd(byCache[0].cr)}</span> por 1M em cache read${byCache[1].cr === byCache[0].cr ? ` (empate com ${byCache[1].n})` : ` · 2º: ${usd(byCache[1].cr)} (${byCache[1].n})`}<br>melhor sem deal: ${usd(nonDeal.cr)} (${nonDeal.n})`, "text-teal-400") +
+    kpiCard("Teto de crédito no GOAT", "$" + CRED_MAX + " máx · $20 padrão",
+      `${cheapTier.length} dos ${NO_FREE.filter(m => m.onGoat).length} modelos pagos do GOAT têm teto de $20<br>só ${MODELS.filter(m => m.cred === CRED_MAX).length} chegam a $${CRED_MAX}: ${MODELS.filter(m => m.cred === CRED_MAX).map(m => m.n).join(", ")}`, "text-rose-400") +
+    kpiCard("Melhor com preço cheio (sem deal)", PICKS.noDeal.n,
+      `equilíbrio ${PICKS.noDeal.balance.toFixed(0)}/100 sem depender de desconto · IQ ${PICKS.noDeal.iq}<br>${usd(PICKS.noDeal.inp)} in / ${usd(PICKS.noDeal.out)} out / ${usd(PICKS.noDeal.cr)} cache · teto $${PICKS.noDeal.cred}`, "text-lime-400") +
+    kpiCard("Grátis (custo zero)", PICKS.free.n,
+      `IQ ${PICKS.free.iq} · ${PICKS.free.tps} tok/s · ${PICKS.free.ctx} de contexto<br>100 req/dia · zero crédito consumido`, "text-emerald-400");
+}
+
+/* ============================ TETOS ============================ */
+function renderTiers() {
+  const paid = NO_FREE.filter(m => m.onGoat);
+  const max = paid.length;
+  $("#tierSummary").innerHTML = `<strong class="text-slate-200">${paid.length}</strong> modelos pagos · <strong class="text-slate-200">${CRED_TIERS.length}</strong> faixas de teto · de $${Math.min(...CRED_TIERS)} a $${CRED_MAX}`;
+
+  const rows = CRED_TIERS.map(t => {
+    const ms = paid.filter(m => m.cred === t).sort(byBalance);
+    const share = Math.round(ms.length / max * 100);
+    return `
+    <div class="px-4 py-3 grid grid-cols-1 lg:grid-cols-[110px_1fr] gap-3 hover:bg-slate-900/40 transition">
+      <div class="flex items-center gap-2 lg:block">
+        <div class="text-2xl font-black text-white mono">$${t}</div>
+        <div class="text-[11px] text-slate-500">${ms.length} modelo${ms.length > 1 ? "s" : ""} · ${share}%</div>
+      </div>
+      <div class="min-w-0">
+        <div class="h-1.5 rounded-full bg-slate-800 overflow-hidden mb-2">
+          <div class="h-full ${t >= 60 ? "bg-emerald-400" : t >= 40 ? "bg-sky-400" : t >= 30 ? "bg-violet-400" : "bg-slate-500"}" style="width:${share}%"></div>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          ${ms.map(m => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-300 whitespace-nowrap">${m.n}<span class="text-slate-500"> · ${int(reqMonth(m, "goat").n)} req/mês</span></span>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  $("#tierList").innerHTML = rows + `
+    <div class="px-4 py-3 grid grid-cols-1 lg:grid-cols-[110px_1fr] gap-3">
+      <div class="flex items-center gap-2 lg:block">
+        <div class="text-2xl font-black text-emerald-400 mono">$0</div>
+        <div class="text-[11px] text-slate-500">3 modelos · sem teto</div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 items-center">
+        ${MODELS.filter(m => m.isFree).map(m => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 whitespace-nowrap">${m.n}</span>`).join("")}
+        <span class="text-[10px] text-slate-500">100 req/dia por conta (Laguna S 2.1 é livre enquanto houver capacidade)</span>
+      </div>
+    </div>`;
+}
+
+/* ============================ RECOMENDAÇÕES ============================ */
+function pickCard(eyebrow, accent, m, why) {
+  // req/mês do plano em que o modelo realmente existe
+  const reqFor = m => {
+    if (m.isFree) return "100/dia";
+    const key = m.onGoat ? "goat" : m.min === "pro" ? "pro" : "max";
+    const r = reqMonth(m, key);
+    return r ? (r.est ? "≈ " : "") + int(r.n) : "—";
+  };
+  return `
+  <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col hover:border-slate-700 transition">
+    <div class="text-[11px] uppercase tracking-wide font-semibold text-${accent}-400">${eyebrow}</div>
+    <div class="text-base font-bold text-white mt-1 leading-snug">${m.n}</div>
+    <div class="text-[11px] text-slate-500 mb-2">${m.v} · ${m.ctx} · ${PLAN_LABEL[m.min]}+ ${m.cred ? `· teto $${m.cred}` : ""}</div>
+    <p class="text-xs text-slate-400 leading-relaxed flex-1">${why}</p>
+    <div class="grid grid-cols-3 gap-1.5 mt-3 text-center">
+      <div class="rounded-lg bg-slate-950/70 py-1.5"><div class="text-[9px] text-slate-500 uppercase">$/req</div><div class="font-bold text-sky-400 text-xs mono">${usdReq(m.costReq)}</div></div>
+      <div class="rounded-lg bg-slate-950/70 py-1.5"><div class="text-[9px] text-slate-500 uppercase">IQ</div><div class="font-bold text-violet-400 text-xs">${m.iq ?? "—"}</div></div>
+      <div class="rounded-lg bg-slate-950/70 py-1.5"><div class="text-[9px] text-slate-500 uppercase">req/mês</div><div class="font-bold text-emerald-400 text-xs mono">${reqFor(m)}</div></div>
+    </div>
+  </div>`;
+}
+
+function renderPicks() {
+  const p = PICKS;
+  const cred70 = MODELS.filter(m => m.cred === CRED_MAX).sort(byBalance);
+  // o IQ mais alto costuma vir empatado (modelo cheio vs. Contributor): explicita a escolha
+  const tie = MODELS.filter(m => m.iq === p.smartest.iq && m !== p.smartest).sort(byCpr)[0];
+  const smartWhy = tie
+    ? `IQ ${p.smartest.iq}, o mais alto publicado, empatado com ${tie.n}: mesma capacidade, ${usdReq(p.smartest.costReq)}/req contra ${usdReq(tie.costReq)}/req.
+       Com o mesmo teto de $${p.smartest.cred}, isso dá <strong class="text-slate-300">${int(reqMonth(p.smartest, "goat").n)}</strong> requisições/mês contra ${int(reqMonth(tie, "goat").n)}.`
+    : `IQ ${p.smartest.iq}, o mais alto publicado, a ${usdReq(p.smartest.costReq)} por requisição.`;
+  $("#pickGrid").innerHTML =
+    pickCard("Quero o melhor no geral", "emerald", p.best,
+      `Maior Intelligence da tabela inteira (IQ ${p.best.iq}) pagando preço de modelo pequeno: ${usdReq(p.best.costReq)} por requisição.
+       É o topo das duas métricas ao mesmo tempo. <strong class="text-slate-300">Risco:</strong> é preço Contributor (deal) — se o acordo cair, volta a ${usd(1.25)} in / ${usd(4.25)} out.`) +
+    pickCard("Quero o mais inteligente", "violet", p.smartest, smartWhy) +
+    pickCard("Quero rodar o mês inteiro", "sky", p.volume,
+      `O maior volume do GOAT: teto de $${p.volume.cred} com requisição de ${usdReq(p.volume.costReq)}. IQ ${p.volume.iq} é honesto
+       para refactor, testes e tarefas de repositório. É o modelo para deixar no /model e esquecer.`) +
+    pickCard("Quero a resposta mais rápida", "amber", p.fastest,
+      `<span class="text-slate-200 font-bold">${p.fastest.tps} tok/s</span> — o mais rápido da tabela, com IQ ${p.fastest.iq}. Rapidez muda a sensação do agente:
+       menos espera entre tool calls faz o loop inteiro parecer mais curto. Custa ${usdReq(p.fastest.costReq)}/req com teto de $${p.fastest.cred}.`) +
+    pickCard("Não quero depender de deal", "lime", p.noDeal,
+      `Preço cheio, sem desconto temporário: ${usd(p.noDeal.inp)} in / ${usd(p.noDeal.out)} out / ${usd(p.noDeal.cr)} cache.
+       Equilíbrio ${p.noDeal.balance.toFixed(0)}/100 é o melhor entre os modelos sem deal — e é o mesmo que lidera em volume, o que só reforça a escolha.`) +
+    pickCard("Quero o maior teto possível", "cyan", p.bigBudget,
+      `Entre os ${cred70.length} modelos com teto cheio de $${CRED_MAX} (${cred70.map(m => m.n).join(", ")}),
+       é o de melhor equilíbrio. Teto alto só ajuda se o custo por requisição for baixo — aqui é ${usdReq(p.bigBudget.costReq)}.`) +
+    pickCard("Preciso do que só existe fora do GOAT", "rose", p.premium,
+      `O mais capaz entre os que exigem Pro/Max: IQ ${p.premium.iq} a ${usdReq(p.premium.costReq)} por requisição.
+       Nesse tier o que se compra é teto de capacidade e acesso a laboratório fechado, não eficiência — vale quando o modelo do GOAT não fecha a tarefa.`) +
+    pickCard("Quero grátis", "emerald", p.free,
+      `Único modelo grátis com IQ publicado (${p.free.iq}) — os outros dois (Laguna S 2.1 e Ling 3.0 Flash Sante) não têm nota.
+       ${p.free.tps} tok/s, ${p.free.ctx} de contexto, 100 req/dia no teto da conta.`);
+}
+
+/* ============================ PODIUM + RANKING ============================ */
+function renderPodium() {
+  const top = BALANCED.slice(0, 3);
+  const medals = ["🥇","🥈","🥉"];
+  const ring = ["border-amber-400/60","border-slate-400/50","border-amber-700/50"];
+  $("#podium").innerHTML = top.map((m, i) => `
+    <div class="rounded-2xl border-2 ${ring[i]} bg-slate-900/60 p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">${medals[i]}</span>
+        <div>
+          <div class="font-bold text-white leading-tight">${m.n}</div>
+          <div class="text-[11px] text-slate-500">${m.v} · ${m.ctx} · ${PLAN_LABEL[m.min]}+ · teto $${m.cred}</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-center">
+        <div class="rounded-lg bg-slate-950/70 py-2"><div class="text-[10px] text-slate-500 uppercase">Equilíb.</div><div class="font-bold text-emerald-400 text-sm">${m.balance.toFixed(0)}</div></div>
+        <div class="rounded-lg bg-slate-950/70 py-2"><div class="text-[10px] text-slate-500 uppercase">IQ</div><div class="font-bold text-violet-400 text-sm">${m.iq}</div></div>
+        <div class="rounded-lg bg-slate-950/70 py-2"><div class="text-[10px] text-slate-500 uppercase">$/req</div><div class="font-bold text-sky-400 text-xs mono">${usdReq(m.costReq)}</div></div>
+        <div class="rounded-lg bg-slate-950/70 py-2"><div class="text-[10px] text-slate-500 uppercase">req/sem</div><div class="font-bold text-slate-300 text-xs mono">${int(reqMonth(m, "goat").n * WINDOW.week)}</div></div>
+      </div>
+    </div>`).join("");
+}
+
+function renderRanking() {
+  const list = BALANCED.slice(0, 15);
+  $("#rankingList").innerHTML = list.map((m, i) => {
+    const pct = Math.max(4, Math.round(m.balance / BALANCED[0].balance * 100));
+    const color = i === 0 ? "bg-emerald-400" : i < 3 ? "bg-sky-400" : i < 8 ? "bg-violet-400" : "bg-slate-500";
+    const rm = reqMonth(m, "goat");
+    return `<div class="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+      <div class="flex items-baseline justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-white truncate">${i + 1}º ${m.n}</div>
+          <div class="text-[10px] text-slate-500 truncate">${m.v} · IQ ${m.iq} · ${usdReq(m.costReq)}/req · teto $${m.cred} · ${int(rm?.n)} req/mês</div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-sm font-bold text-emerald-400">${m.balance.toFixed(0)}</div>
+          <div class="text-[9px] text-slate-600 uppercase">equilíb.</div>
+        </div>
+      </div>
+      <div class="mt-2 h-1.5 rounded-full bg-slate-800 overflow-hidden"><div class="h-full ${color}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+/* ============================ TABELA ============================ */
+function tagChips(m) {
+  const map = { free:["Grátis","bg-emerald-500/15 text-emerald-400"], vision:["visão","bg-sky-500/15 text-sky-300"],
+                reasoning:["reasoning","bg-violet-500/15 text-violet-300"], deal:["deal","bg-amber-500/15 text-amber-300"] };
+  return m.tags.map(t => map[t] ? `<span class="text-[9px] px-1.5 py-0.5 rounded ${map[t][1]} whitespace-nowrap">${map[t][0]}</span>` : "").join("");
+}
+
+const PLAN_LABEL = { go:"Go", goat:"GOAT", pro:"Pro", max:"Max" };
+
+function priceCell(m, val, baseIdx, peakIdx) {
+  if (m.isFree) return '<span class="text-emerald-400">Grátis</span>';
+  const base = m.base ? `<s class="text-slate-600 mr-1">${usd(m.base[baseIdx])}</s>` : "";
+  const peak = (m.peak && peakIdx != null) ? `<div class="text-[9px] text-amber-500/80 whitespace-nowrap">pico ${usd(m.peak[peakIdx])}</div>`
+             : (m.cw != null && baseIdx === 2 ? `<div class="text-[9px] text-slate-500 whitespace-nowrap">write ${usd(m.cw)}</div>` : "");
+  return base + usd(val) + peak;
+}
+
+function render() {
+  const q = $("#fSearch").value.trim().toLowerCase();
+  const cat = $("#fCat").value;
+  const vendor = $("#fVendor").value;
+  const planKey = $("#fPlan").value;
+  const plan = PLANS.find(p => p.key === planKey) || PLANS[1];
+  const planRank = PLAN_RANK[plan.key];
+  // "Só em Pro/Max" e "apenas inclusos no plano" se contradizem: a categoria manda
+  let onlyPlan = $("#fOnlyPlan").checked;
+  if (cat === "proplus") { onlyPlan = false; $("#fOnlyPlan").checked = false; }
+  const sort = $("#fSort").value;
+  const minIq = parseFloat($("#fMinIq").value) || 0;
+
+  let rows = MODELS.filter(m => {
+    if (cat === "goat" && !m.onGoat) return false;
+    if (cat === "proplus" && m.planRank <= PLAN_RANK.goat) return false;
+    if (cat === "deals" && !m.isDeal) return false;
+    if (cat === "free" && !m.isFree) return false;
+    if (cat === "open" && !m.isOpen) return false;
+    if (cat === "vision" && !m.tags.includes("vision")) return false;
+    if (cat === "reasoning" && !m.tags.includes("reasoning")) return false;
+    if (vendor !== "all" && m.v !== vendor) return false;
+    if (onlyPlan && m.planRank > planRank) return false;
+    // piso de inteligência: exige nota conhecida (oficial ou estimada ‡)
+    if (minIq > 0 && !(m.iqEst != null && m.iqEst >= minIq)) return false;
+    if (q && !(m.n + " " + m.v + " " + m.id).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // modelos grátis contam como valor máximo (custo zero)
+  const val = m => m.isFree ? 1e18 : (m.value ?? -1);
+  // req/mês: modelos grátis não têm cota mensal (100 req/dia), então vão para o fim
+  const reqNum = m => { const r = reqOf(m, plan); return r ? r.n : -1; };
+
+  const cmp = {
+    balance: (a,b) => (b.balance ?? -1) - (a.balance ?? -1),
+    value: (a,b) => val(b) - val(a) || (b.iq ?? -1) - (a.iq ?? -1),
+    iq:    (a,b) => (b.iqEst ?? -1) - (a.iqEst ?? -1),
+    tps:   (a,b) => (b.tps ?? -1) - (a.tps ?? -1),
+    cred:  (a,b) => (b.cred ?? -1) - (a.cred ?? -1) || (b.balance ?? -1) - (a.balance ?? -1),
+    req:   (a,b) => reqNum(b) - reqNum(a),
+    reqh:  (a,b) => (reqNum(b) - reqNum(a)) * WINDOW.h5,
+    cpr:   (a,b) => a.costReq - b.costReq || (b.iq ?? -1) - (a.iq ?? -1),
+    blend: (a,b) => a.blend - b.blend,
+    out:   (a,b) => a.out - b.out,
+    cache: (a,b) => a.cr - b.cr,
+    name:  (a,b) => a.n.localeCompare(b.n)
+  };
+  rows.sort(cmp[sort] || cmp.balance);
+
+  const isGoatPlan = plan.key === "goat";
+  $("#thReq").textContent = plan.reqKey ? `Req/mês (${plan.name})` : "Req/mês";
+  const piso = minIq > 0 ? ` · piso de IQ ≥ ${minIq}` : "";
+  // só anuncia "melhor equilíbrio" se a primeira linha tiver índice (grátis e sem nota não têm)
+  const balTop = (sort === "balance" && rows[0] && rows[0].balance != null) ? rows[0] : null;
+  $("#resultCount").innerHTML = `<strong class="text-slate-200">${rows.length}</strong> modelo(s) listado(s) · plano <strong class="text-sky-300">${plan.name}</strong> · ${plan.credits ? "$" + plan.credits + " de créditos/mês" : "pay-as-you-go"}${piso}` +
+    (balTop ? ` · melhor equilíbrio: <strong class="text-emerald-400">${balTop.n}</strong> (${balTop.balance.toFixed(0)} pts)` : "");
+
+  // medalha vai para o melhor equilíbrio DENTRO do que está sendo exibido
+  const viewTop = rows.reduce((b, m) => (m.balance != null && (!b || m.balance > b.balance)) ? m : b, null);
+
+  $("#tbody").innerHTML = rows.map(m => {
+    const isFree = m.isFree;
+    const unavailable = m.planRank > planRank;
+    const r = reqOf(m, plan);
+    const isTop = m === viewTop;
+    const reqCell = isFree
+      ? '<span title="LongCat 2.0 e Ling 3.0 Flash Sante: 100 req/dia; Laguna S 2.1: livre enquanto houver capacidade" class="text-emerald-400">grátis †</span>'
+      : (r == null ? '<span class="text-slate-600">—</span>'
+        : `<span class="${r.est ? "text-slate-500" : "text-slate-300"}">${r.est ? "≈ " : ""}${int(r.n)}</span>` +
+          (isGoatPlan ? `<div class="text-[9px] text-slate-500 whitespace-nowrap">5h ${int(r.n * WINDOW.h5)} · sem ${int(r.n * WINDOW.week)}</div>` : ""));
+    return `
+    <tr class="row-hover ${unavailable ? "opacity-40" : ""}">
+      <td class="px-3 py-2.5 text-slate-500 mono text-xs whitespace-nowrap">${m.rankLabel || "—"}</td>
+      <td class="px-3 py-2.5">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-medium text-slate-100">${m.n}</span>
+          ${isTop ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 whitespace-nowrap font-bold">★ melhor equilíbrio do filtro</span>' : ""}
+          ${tagChips(m)}
+        </div>
+        <div class="text-[10px] text-slate-600 mono">${m.id}</div>
+      </td>
+      <td class="px-3 py-2.5 text-xs text-slate-400 whitespace-nowrap">${m.v}</td>
+      <td class="px-3 py-2.5 text-right text-xs text-slate-400 whitespace-nowrap">${m.ctx}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap ${m.cred == null ? "text-slate-600" : (m.cred >= 60 ? "text-emerald-400" : m.cred >= 40 ? "text-sky-400" : m.cred > 0 ? "text-slate-300" : "text-emerald-400")}">
+        ${isFree ? "grátis" : (m.cred == null ? "—" : "$" + m.cred)}
+      </td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap">${priceCell(m, m.inp, 0, 0)}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap">${priceCell(m, m.out, 1, 1)}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap">${priceCell(m, m.cr, 2, null)}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs font-semibold ${isFree ? "text-emerald-400" : "text-sky-300"} whitespace-nowrap">${isFree ? "$0" : usdReq(m.costReq)}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap ${isFree ? "text-emerald-400" : "text-slate-300"}">${isFree ? "$0" : usd(m.blend)}</td>
+      <td class="px-3 py-2.5 text-right text-xs font-semibold">
+        ${m.iq != null ? `<span class="text-violet-300">${m.iq}</span>`
+          : m.iqEst != null ? `<span class="text-slate-300">≈ ${m.iqEst.toFixed(1)}‡</span><div class="text-[9px] text-slate-500 whitespace-nowrap">AA ${m.aa}</div>`
+          : '<span class="text-slate-600">s/ nota</span>'}
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs font-bold ${m.value == null ? "text-slate-600" : "text-emerald-400"} whitespace-nowrap">
+        ${isFree ? "∞" : (m.value == null ? "—" : Math.round(m.value).toLocaleString("pt-BR"))}
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs whitespace-nowrap">
+        ${m.balance == null ? '<span class="text-slate-600">—</span>'
+          : `<span class="font-bold ${m.balance >= 60 ? "text-emerald-400" : m.balance >= 35 ? "text-amber-400" : "text-slate-500"}">${m.balance.toFixed(0)}</span>`}
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs text-slate-400">${m.tps ?? "—"}</td>
+      <td class="px-3 py-2.5 text-center whitespace-nowrap">
+        <span class="text-[10px] px-2 py-0.5 rounded-full ${unavailable ? "bg-rose-500/10 text-rose-400" : "bg-slate-700/40 text-slate-300"}">${PLAN_LABEL[m.min]}+</span>
+      </td>
+      <td class="px-3 py-2.5 text-right mono text-xs whitespace-nowrap ${r && r.n === 0 ? "text-emerald-400" : ""}">${reqCell}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="16" class="px-3 py-10 text-center text-slate-500 text-sm">Nenhum modelo encontrado com os filtros atuais.</td></tr>`;
+}
+
+/* ============================ GRÁTIS ============================ */
+/* Rivais mais próximos em benchmark, exatamente como as páginas oficiais listam.
+   aa = Intelligence do Artificial Analysis v4.3 · coding = Coding Index.
+   Mesma escala em todas as linhas, então a comparação é direta.              */
+const FREE_RIVALS = [
+  { id:"meta/muse-spark-1.3",          aa:48.2, coding:75.8 },
+  { id:"google/gemini-3.5-flash-lite", aa:22.7, coding:49.3 },
+  { id:"xiaomi/mimo-v2.5",             aa:22.3, coding:56.8 },
+  { id:"meituan/LongCat-2.0:free",     aa:19.7, coding:45.3, self:true },
+  { id:"stepfun/Step-3.7-Flash",       aa:19.5, coding:39.6 },
+  { id:"stepfun/Step-3.5-Flash",       aa:17.0, coding:null }
+];
+const FREE_REQ_MONTH = 3000;   // 100 requisições/dia por conta
+
+function renderFree() {
+  const byId = id => MODELS.find(m => m.id === id);
+  $("#freeRivals").innerHTML = FREE_RIVALS.map(r => {
+    const m = byId(r.id);
+    const teto = m.isFree ? "sem teto: 100 req/dia" : (m.cred ? `teto $${m.cred}` : `${PLAN_LABEL[m.min]}+`);
+    return `
+    <tr class="${r.self ? "bg-emerald-500/10" : "row-hover"}">
+      <td class="px-3 py-2.5">
+        <span class="${r.self ? "font-bold text-emerald-300" : "text-slate-100"}">${m.n}</span>
+        ${r.self ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 ml-1 whitespace-nowrap">grátis</span>' : ""}
+        <div class="text-[10px] text-slate-500">${m.v} · ${m.ctx} · ${teto}</div>
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs font-semibold ${r.self ? "text-emerald-300" : "text-slate-300"}">${r.aa.toFixed(1)}</td>
+      <td class="px-3 py-2.5 text-right text-xs ${r.self ? "text-emerald-300/90" : "text-slate-400"}">${r.coding ?? "—"}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs ${m.isFree ? "text-emerald-400" : "text-sky-300"}">${m.isFree ? "$0" : usdReq(m.costReq)}</td>
+      <td class="px-3 py-2.5 text-right mono text-xs ${m.isFree ? "font-bold text-emerald-400" : "text-slate-300"}">${m.isFree ? "$0" : usd(m.costReq * FREE_REQ_MONTH)}</td>
+    </tr>`;
+  }).join("");
+
+  const rv = id => FREE_RIVALS.find(r => r.id === id);
+  const lc = rv("meituan/LongCat-2.0:free"), st = rv("stepfun/Step-3.7-Flash"), mi = rv("xiaomi/mimo-v2.5");
+  const stCost = byId(st.id).costReq * FREE_REQ_MONTH, miCost = byId(mi.id).costReq * FREE_REQ_MONTH;
+  $("#freeRivalsNote").innerHTML =
+    `Vizinho mais próximo: <strong class="text-slate-300">Step 3.7 Flash</strong> (IQ ${st.aa.toFixed(1)} contra ${lc.aa.toFixed(1)}) — e o LongCat ainda ganha em Coding (${lc.coding} contra ${st.coding}),
+     custando <strong class="text-slate-300">$0</strong> em vez de ${usd(stCost)} pelas mesmas 3.000 requisições. Quem bate o LongCat nos dois eixos é o
+     <strong class="text-slate-300">MiMo V2.5</strong> (IQ ${mi.aa.toFixed(1)}, Coding ${mi.coding}), a ${usd(miCost)} por 3.000 req.`;
+
+  $("#freeValue").innerHTML =
+    `<p><strong class="text-emerald-300">100 requisições/dia por conta</strong> — ~3.000 por mês, sem consumir crédito. Os três juntos dão até
+      <strong class="text-slate-300">9.000 requisições/mês</strong> de volume de graça.</p>
+     <p>Substituir essas 3.000 req pelo vizinho mais barato da faixa custaria <strong class="text-slate-200">${usd(miCost)}</strong>; pelo mais caro,
+      <strong class="text-slate-200">${usd(stCost)}</strong>. Em créditos, o grátis vale <em>de menos de $1 a ~$7 por mês</em>.</p>
+     <p>O valor real não é preço, é disponibilidade: passada a janela de 5 h, a semanal ou o teto do modelo, os pagos param de responder e
+      <strong class="text-slate-300">só os grátis continuam</strong>.</p>`;
+
+  $("#freeNoScore").innerHTML =
+    `<p><strong class="text-slate-300">Laguna S 2.1</strong> (256K) e <strong class="text-slate-300">Ling 3.0 Flash Sante</strong> (262K) não têm nota publicada em
+      nenhuma das duas fontes — nem Intelligence, nem velocidade. Sem benchmark, qualquer comparação seria invenção: a própria página do
+      Ling lista como rival o <strong class="text-slate-300">Claude Haiku 4.5</strong>, que na mesma escala faz IQ 15,4, o piso do catálogo.</p>
+     <p>Na prática: use os dois como volume de emergência (100 req/dia cada) e não como substituto do modelo principal —
+      entre os grátis, só o LongCat tem benchmark para se posicionar.</p>`;
+}
+
+/* ============================ CSV ============================ */
+function exportCsv() {
+  const head = ["id","modelo","vendor","contexto","teto_goat_usd","in_por_1M","out_por_1M","cache_read_por_1M","cache_write_por_1M","custo_por_requisicao_usd","custo_blend_por_1M","intelligence","aa_v43","intelligence_estimada","iq_por_dolar","equilibrio_inteligente_barato","tokens_s","plano_minimo","req_mes_goat","req_5h_goat","req_semana_goat","req_mes_pro","req_mes_max10","flags"];
+  const lines = [head.join(",")];
+  MODELS.forEach(m => {
+    const g = reqMonth(m, "goat");
+    lines.push([
+      m.id, `"${m.n}"`, m.v, m.ctx, m.cred ?? "", m.inp, m.out, m.cr, m.cw ?? "",
+      m.costReq.toFixed(6), m.blend.toFixed(6),
+      m.iq ?? "", m.aa ?? "", m.iq == null && m.iqEst != null ? m.iqEst.toFixed(1) : "",
+      m.value ? Math.round(m.value) : "", m.balance != null ? m.balance.toFixed(1) : "", m.tps ?? "", m.min,
+      g ? (g.est ? "~" : "") + Math.round(g.n) : "", g ? Math.round(g.n * WINDOW.h5) : "", g ? Math.round(g.n * WINDOW.week) : "",
+      m.req.pro ?? "", m.req.max ?? "", m.tags.join("|")
+    ].join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "command-code-matriz-modelos.csv";
+  a.click();
+}
+
+/* ============================ TEMA ============================ */
+const THEME_KEY = "cc-matriz-tema";
+function applyTheme(t) {
+  const light = t === "light";
+  document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+  const b = $("#btnTheme");
+  b.setAttribute("aria-pressed", light ? "true" : "false");
+  b.setAttribute("aria-label", light ? "Ativar tema escuro" : "Ativar tema claro");
+  $("#themeLabel").textContent = light ? "Escuro" : "Claro";
+}
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  applyTheme(saved === "light" ? "light" : "dark");
+  $("#btnTheme").onclick = () => {
+    const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  };
+}
+
+/* ============================ BOOT ============================ */
+function boot() {
+  const vendors = [...new Set(MODELS.map(m => m.v))].sort((a, b) => a.localeCompare(b));
+  $("#fVendor").innerHTML = `<option value="all">Todos os vendors</option>` +
+    vendors.map(v => `<option value="${v}">${v}</option>`).join("");
+
+  initTheme();
+  renderPlans(); renderKPIs(); renderTiers(); renderPicks(); renderPodium(); renderRanking(); renderFree();
+  ["#fSearch","#fCat","#fVendor","#fPlan","#fSort","#fMinIq","#fOnlyPlan"].forEach(s =>
+    $(s).addEventListener("input", render));
+  $("#btnCsv").onclick = exportCsv;
+  render();
+}
+boot();
+</script>
+</body>
+</html>
